@@ -11,7 +11,7 @@ adattandolo allo stile, al tono e al contesto di chi lo legge.
 ✨ Contenuti davvero personali per gli utenti
 
 ## Documenti di progetto
-- Video di presentazione
+- Video di presentazione (https://vimeo.com/1090654516/3e01eb01dd?share=copy)
 - Slide della presentazione (https://www.figma.com/deck/PbjIhdoJwG84yf1lOdE0jc/Editorial?node-id=1-731&t=C1IPAWHMabDo1equ-1)
 - Business plan
 - Analisi funzionale
