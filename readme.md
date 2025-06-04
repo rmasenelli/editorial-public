@@ -1,3 +1,5 @@
+<img width="267" alt="editorial-logo" src="https://github.com/user-attachments/assets/17824339-b5be-4bb5-9992-1da7d3db1e2e" />
+
 # Ogni lettore è diverso. Ogni contenuto dovrebbe esserlo.
 
 **Il nostro sistema editoriale intelligente riscrive ogni articolo in tempo reale,**  
