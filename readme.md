@@ -12,7 +12,7 @@ adattandolo allo stile, al tono e al contesto di chi lo legge.
 
 ## Documenti di progetto
 - Video di presentazione
-- Slide della presentazione
+- Slide della presentazione (https://www.figma.com/deck/PbjIhdoJwG84yf1lOdE0jc/Editorial?node-id=1-731&t=C1IPAWHMabDo1equ-1)
 - Business plan
 - Analisi funzionale
 - Mockup navigabile
