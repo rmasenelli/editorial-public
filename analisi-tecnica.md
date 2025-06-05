@@ -1,5 +1,8 @@
+# Analisi Tecnica - Editorial
+
 ## 1. Introduzione
-Il presente documento descrive l’architettura di un nuovo sistema editoriale personalizzato basato su tecnologie moderne e intelligenza artificiale. Lo scopo è fornire una visione dei componenti che ne garantiscono scalabilità, manutenibilità e modularità, nonché illustrare il flusso dei dati e le decisioni tecnologiche alla base di ogni scelta progettuale.
+
+Il presente documento descrive l’architettura di un nuovo sistema editoriale personalizzato basato sull'intelligenza artificiale. Lo scopo è fornire una visione dei componenti che ne garantiscono scalabilità, manutenibilità e modularità, nonché illustrare il flusso dei dati e le decisioni tecnologiche alla base di ogni scelta progettuale.
 
 I requisiti principali che hanno guidato la progettazione sono:
 
@@ -11,10 +14,11 @@ I requisiti principali che hanno guidato la progettazione sono:
 * **Modularità e containerizzazione**: orchestrazione per deploy automatici, rollback e autoscaling.
 
 ## 2. Visione di Alto Livello e Diagramma Architetturale
+
 L’architettura segue un paradigma **micro-servizi modulari**, containerizzati e orchestrati, con un API Gateway centralizzato che gestisce il routing verso i vari moduli. Tutti i servizi core (frontend, backend, AI Engine, database, cache, streaming, logica di guardrail, ecc.) risiedono ciascuno in container Docker, eseguiti in un cluster Kubernetes.
 
-Rappresentazione grafica del sistema:
-![editorial-schema-archiettural](https://github.com/user-attachments/assets/d427cd02-15b8-4382-acbc-8e364b8540f9)
+Schema archietturale
+![editorial-schema-archiettural](https://github.com/user-attachments/assets/21403b93-bc42-4af7-a8ac-a2d2ab65c61e)
 
 
 ## 3. Componenti Architetturali Dettagliate
@@ -24,12 +28,12 @@ Rappresentazione grafica del sistema:
 * **Tecnologie utilizzate**:
 
   * **React** per la costruzione di componenti riutilizzabili e gestione dello stato (Redux / Context API).
-  * **Next.js** per il rendering server-side (SSR), fondamentale per l’indicizzazione SEO dei contenuti giornalistici e per una prima visualizzazione rapida (Time-to-First-Byte contenuto).
+  * **Next.js** per il rendering server-side (**SSR**), fondamentale per l’indicizzazione SEO dei contenuti giornalistici e per una prima visualizzazione rapida grazie al ridotto Time to First Byte (**TTFB**).
 
 * **Ruolo e funzionalità principali**:
 
   1. **Interfaccia Utente Responsive e Accessibile**
-     * Layout adattivo (mobile-first) con Tailwind CSS e componenti accessibili (WCAG 2.1).
+     * Layout adattivo (mobile-first) con Tailwind CSS e componenti accessibili (WCAG 2.2).
      * Tema giorno/notte dinamico, supporto TTS (Text-To-Speech) e modalità alta leggibilità (contrast mode).
   2. **Onboarding e Profilazione**
      * Flusso guidato per la profilazione iniziale (preferenze di lettura, interessi, tone-of-voice).
@@ -48,6 +52,7 @@ Rappresentazione grafica del sistema:
   * **GraphQL** opzionale per ridurre overfetching e ottimizzare le query di liste (es. feed personalizzato, suggerimenti).
 
 ### 3.2. API Gateway (Nginx)
+
 * **Ruolo**:
   1. **Entrypoint Unificato**
      * Riceve tutte le richieste client esterne (portale web, mobile app, bot di terze parti), terminando connessioni TLS.
@@ -56,7 +61,7 @@ Rappresentazione grafica del sistema:
      * Round-robin / least-connections / IP-hash sulle istanze dei micro-servizi.
      * Monitoraggio health-check periodico (endpoint /health) per escludere nodi non funzionanti dal pool.
   3. **Sicurezza e Protezioni**
-     * **TLS** end-to-end (certificati gestiti via Let’s Encrypt o soluzioni enterprise).
+     * **TLS** end-to-end.
      * **Rate Limiting**: limiti di chiamata per IP o JWT token per prevenire DDoS e scraping massivo.
      * **CORS** e **Header di Sicurezza** (HSTS, X-Content-Type-Options, Content-Security-Policy).
      * **WAF** (Web Application Firewall) integrato opzionale per bloccare attacchi noti (SQL injection, XSS).
@@ -65,9 +70,11 @@ Rappresentazione grafica del sistema:
      * **Caching** delle risposte statiche (file JS/CSS/Media) con header `Cache-Control`, collegato a un CDN per offload geografico.
 
 ### 3.3. Backend (API Application Layer)
+
 Il **backend** è implementato in **Node.js** con **NestJS**, framework che facilita la modularizzazione e l’uso di TypeScript per tipizzazione statica. Ogni micro-servizio espone un set di endpoint REST (JSON) e/o endpoint GraphQL quando si desidera flessibilità nelle query di dati complessi.
 
 #### 3.3.1. Struttura dei Microservizi
+
 1. **user-service**
    * **Funzionalità**: gestione utenti, profili, crediti (badge, livelli), onboarding, preferenze.
    * **Database**: scrive su PostgreSQL in tabelle come `users`, `user_preferences`, `user_badges`.
@@ -112,13 +119,14 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
    * **Dashboard**: espone API verso un frontend dashboard (Angular o React separato) per editori/giornalisti, che possono monitorare i KPI in tempo reale (aggiornati via WebSocket o polling periodico).
 
 #### 3.3.2. Comunicazione tra Backend e AI Engine
+
 * **Meccanismo**:
   1. Il `content-service` (o un componente intermedio) invia una richiesta HTTP POST verso un endpoint dedicato dell’**AI Engine** (`/internal/ai/generate`) contenente:
      * `article_id`, `user_id` (per profilazione)
      * `version_type` (es. `tone:ironico`, `summary:breve`, `audio`)
      * eventuali parametri aggiuntivi (es. lunghezza desiderata, livello di complessità)
      * `session_id` (per collegare a uno storico breve di conversazione)
-  2. L’**AI Engine** elabora la richiesta sfruttando **LangChain** e potenzialmente un orchestratore come **LangGraph** per suddividere il flusso in task più piccoli (preprocessing, chiamata al modello LLM, postprocessing).
+  2. L’**AI Engine** elabora la richiesta sfruttando **LangChain** e **LangGraph** per suddividere il flusso in task più piccoli (preprocessing, chiamata al modello LLM, postprocessing).
      * Controlli di guardrail semantici (ad opera del “Layer Guardrail”) per evitare output bias o contenuti potenzialmente illeciti o non conformi alle policy interne.
      * Log degli input e delle decisioni in un topic Kafka `ai_logs` per audit e debugging.
   3. L’AI Engine risponde al `content-service` con un payload JSON.
@@ -127,6 +135,7 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
   * In caso di sovraccarico o latenza eccessiva nell’AI Engine, il `content-service` può rispondere con una versione di fallback (ad esempio copia dell’articolo originale) oppure con un messaggio di “temporaneamente non disponibile, riprova più tardi”.
 
 ### 3.4. Auth Engine
+
 * **Tecnologie**:
   * NestJS (stesso stack dei microservizi) per coerenza.
   * **JWT** per la gestione delle sessioni lato client (token firmato con chiave HS256 o RS256).
@@ -148,10 +157,12 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
   * L’API Gateway effettua una prima validazione del JWT (verifica firma e scadenza), ma le autorizzazioni di livello più granulare (ruoli/permessi) sono verificate a livello di ciascun micro-servizio tramite middleware integrato.
 
 ### 3.5. AI Engine
+
 * **Tecnologie**:
   * **Python 3.10+**
-  * **LangChain** per orchestrare il flusso di chiamate a LLM (es. OpenAI GPT-4, LLaMA, o modelli custom on-premise).
-  * **LangGraph** (o framework simile) per definire grafi di elaborazione: tokenizzazione, chunking, ambient context retrieval (ad esempio, “estrai i fatti principali dall’articolo originale”), generazione di varianti, postprocessing (es. rimozione di nozioni non conformi).
+  * **LangChain** per orchestrare il flusso di chiamate a LLM.
+  * **LLM** addestrati specificamente su corpus giornalistico per garantire riscritture “human-grade”. Questi modelli, ottimizzati via fine-tuning e tecniche di RLHF sui dati editoriali, assicurano output di alta qualità in linea con lo stile giornalistico atteso.
+  * **LangGraph** per definire grafi di elaborazione: tokenizzazione, chunking, ambient context retrieval (ad esempio, “estrai i fatti principali dall’articolo originale”), generazione di varianti, postprocessing (es. rimozione di nozioni non conformi).
   * **FastAPI** come web framework per esporre endpoint HTTP ad alta velocità.
   * **Celery** (o RQ) per gestire task asincroni di tipo “long running” (quando la generazione richiede più tempo).
   * **Redis** come broker Celery (per code di task) e per memorizzare lo stato conversazionale breve nel chatbot.
@@ -177,6 +188,7 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
      * Log strutturati in file (JSONL) per auditing e tracciamento delle decisioni via i Guardrail.
 
 ### 3.6. Layer Guardrail (Controlli Etici e Normativi AI)
+
 * **Obiettivo**: garantire che le risposte generate non contengano bias e rispettino policy editoriali (copyright, norme sulla diffamazione, contenuti sensibili).
 * **Implementazione**:
   1. **Middleware Personalizzato** in Python che intercetta ogni risposta generata dall’LLM prima di restituirla al client.
@@ -194,11 +206,13 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
      * Librerie come **LLM Guardrails** o soluzioni custom basate su snippet di codice Python + pattern matching + chiamate a microservizi di fact-checking.
 
 ### 3.7. Database Primario (PostgreSQL)
+
 * **Scelte tecnologiche**:
   * **PostgreSQL 14+** per affidabilità, supporto JSONB e performance ACID.
   * Replica sincrona/asincrona per alta disponibilità (hot standby) e failover automatico via Patroni o cluster manager (es. **Kubernetes + Operator Patroni**).
 
 ### 3.8. Kafka e Processamento Stream (KPI & Event Stream Processor)
+
 * **Ruolo**:
   * Coordinare l’elaborazione asincrona di eventi di interazione (lettura articolo, cambio versione, commento, badge assegnato, generazione AI) e renderli disponibili in real-time a più micro-servizi (insight-service, dashboard, sistema di raccomandazioni).
 * **Configurazione**:
@@ -215,6 +229,7 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
   * **dashboard real-time**: sub-subscribe via WebSocket o REST polling al consumer del topic `user_interactions` per visualizzare dati in tempo reale su grafici e tendenze.
 
 ### 3.9. Redis (Cache In-Memory)
+
 * **Ruolo**:
   1. **Caching di Contenuti AI**
      * Riduzione delle chiamate all’AI Engine per versioni già generate: chiavi strutturate come `article:{id}:version:{tipo}:user:{user_hash}` con TTL configurabile (es. 1 giorno).
@@ -228,13 +243,9 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
      * Se si usa session-based auth ( anziché JWT puro ), le sessioni possono essere salvate in Redis con TTL di 24h.
 
 ### 3.10. Docker & Kubernetes
+
 * **Containerizzazione**:
-  * **Dockerfile** ottimizzati per ciascun micro-servizio (multistage build, immagine finale snella).
-  * Best practice:
-    * Non esporre porte non necessarie.
-    * Minimizzare livelli di immagine.
-    * Utilizzo di user non-root.
-    * Variabili d’ambiente per configurazione (12-Factor App).
+  * **Dockerfile** ottimizzati per ciascun micro-servizio (multistage build).
 * **Orchestrazione (Kubernetes)**:
   * **Cluster Kubernetes** (minimo 3 nodi worker + 1 master):
     * **Namespaces** distinti per `dev`, `staging`, `prod`.
@@ -257,15 +268,16 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
         1. **Linting** (ESLint, Prettier) e test unitari/integration (Jest per Node.js, pytest per Python).
         2. **Build Container** e push su registry (Docker Hub o ECR/GCR privato).
         3. **Deploy automatico** su cluster di staging in caso di merge su `main`; deploy su `prod` su approval manuale.
-        4. **Helm Upgrade**: `per rollback automatico in caso di failure.
+        4. **Helm Upgrade**: per rollback automatico in caso di failure.
     * **Monitoraggio e Logging**:
       * **Prometheus + Grafana** per metriche di CPU, memoria, latenza endpoint, error rate.
       * **ELK Stack (Elasticsearch, Logstash, Kibana)** o **EFK (Elasticsearch, Fluentd, Kibana)** per centralizzare log applicativi e di sistema.
       * **Alerting**: Prometheus Alertmanager invia avvisi via Slack/Email quando soglie critiche superate (down di repliche, errori 5xx, utilizzo disco > 80%).
 
 ## 4. Flusso Dati e Interazioni
+
 1. **Prima visita / Onboarding**
-   * Utente visita `https://editorial.example.com` → Ingress Kubernetes direziona al servizio Next.js (frontend).
+   * Utente visita `https://editorial.com` → Ingress Kubernetes direziona al servizio Next.js (frontend).
    * Il frontend mostra pagina iniziale con login/signup o onboarding.
    * L'utente fornisce interessi e preferenze: POST `/api/users/preferences` → `user-service` aggiorna record in PostgreSQL e scrive evento su Kafka `user_profile_updated`.
    * Basandosi su preferenze, il frontend recupera feed personalizzato da `content-service` → la query GraphQL include filtri su categorie e tag.
@@ -273,7 +285,7 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
    * L’utente seleziona articolo A: GET `/api/content/articles/A` → `content-service` legge da PostgreSQL le informazioni di base e controlla se in Redis esiste una versione AI personalizzata (chiave `article:A:version:default:user:XYZ`).
      * Se esistente, la restituisce (cache hit).
      * Altrimenti, restituisce la versione umana e manda evento Kafka `article_view` (topic `user_interactions`).
-   * L’utente clicca su “Versione AI Ironica”: POST `/api/content/articles/A/generate-version` body `{ version_type: "tone:ironico", user_id: XYZ }`.
+   * L’utente chiede “Versione AI Ironica”: POST `/api/content/articles/A/generate-version` body `{ version_type: "tone:ironico", user_id: XYZ }`.
      * `content-service` pubblica evento `ai_request` su Kafka, poi invia richiesta sincrona ad AI Engine (`/internal/ai/generate`).
      * AI Engine elabora e risponde con JSON `body_ironico`; `content-service` memorizza in PostgreSQL come nuova `article_version` e in Redis cache.
    * Redis risponde ai futuri GET `article/A/version/ironico` fino a scadenza TTL.
@@ -288,6 +300,7 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
    * `user-service` consuma l’evento, scrive record in `user_badges`, invia notifica push/WebSocket al frontend per mostrare popup “Hai guadagnato il badge X!”.
 
 ## 5. Non-functional Requirements
+
 1. **Scalabilità**
    * **Orizzontale**: grazie a Kubernetes e HPA, i servizi frontend e AI possono scalare in base a metriche custom (CPU, queue length Celery).
    * **Partitioning del Database**: possibilità di sharding logico (per esempio, articoli storici in un cluster dedicato) quando il volume supera soglia.
@@ -310,14 +323,23 @@ Il **backend** è implementato in **Node.js** con **NestJS**, framework che faci
    * **Tempo di risposta medio** endpoint critici (login, recupero lista articoli, generazione veloce di summary) ≤ 200 ms per endpoint CRUD standard; ≤ 2 s per generazione versioni AI (soglia definita in SLA contrattuale).
    * **Tasso di errore** (error rate 5xx) < 1% su traffico di picco.
    * **Cache hit ratio** su Redis ≥ 70% per versioni AI e contenuti statici.
+6. **Multi-tenancy e Isolamento dei Dati**
+   * **Multi-tenancy nativa**: il sistema supporta più organizzazioni editoriali sulla stessa infrastruttura
+   * **Isolamento dati**: ogni dataset è separato per cliente (tenant) tramite ID univoco
+   * **Sicurezza per tenant**: articoli, utenti e metriche sono etichettati con ID tenant per prevenire accessi incrociati
+   * **Implementazione database**: schemi dedicati o filtri per tenant su ogni query
+   * **Controllo accessi**: middleware di autorizzazione garantisce che gli editori vedano solo i propri contenuti e KPI
+   * **Scalabilità SaaS**: l'architettura multi-tenant facilita l'onboarding di nuove testate
 
 ## 6. Sicurezza, Compliance e Aspetti Normativi
+
 1. **GDPR / Diritto all’oblio**
    * Possibilità per l’utente di richiedere cancellazione completa dei propri dati (`DELETE /api/users/:id`), con pulizia cascata su tabelle utenti, badge, commenti (anonymize commenti se necessario), e rimozione dei record di personalizzazione.
    * Conservazione minima dei dati sensibili (password hash, log di accesso) per il periodo strettamente necessario, con politiche di retention definite.
 2. **Protezione dei Contenuti Editoriali**
    * Strutturazione dei permessi di lettura (es. articoli premium per abbonati) gestita da `content-service` + logica di pagamento / subscription service (modulo opzionale).
    * Watermarking degli audio generati e delle pillole per prevenire redistribuzioni non autorizzate.
+   * Hash e tracciabilità: ad ogni articolo caricato viene calcolato un hash crittografico univoco del testo originale, conservato nel database. Ciò implementa un meccanismo di chain-of-custody: garantisce l’integrità del contenuto (rilevando eventuali modifiche non autorizzate) e ne certifica l’originalità a fini di verifica editoriale.
 3. **Audit e Tracciabilità**
    * Ogni azione significativa (creazione/modifica articolo, cambio di ruolo utente, generazione AI) viene loggata con ID utente, IP, timestamp e payload.
    * Disponibilità di interfaccia admin per consultare la cronologia delle operazioni (permessi basati su ruolo).
