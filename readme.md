@@ -14,7 +14,7 @@ adattandolo allo stile, al tono e al contesto di chi lo legge.
 - Analisi funzionale
 - Analisi tecnica
 - Business plan
-- [Video di presentazione](https://vimeo.com/1090654516/3e01eb01dd?share=copy)
+- [Video di presentazione](https://vimeo.com/1090833792/a0c9239bf0)
 - [Slide della presentazione](https://www.figma.com/deck/PbjIhdoJwG84yf1lOdE0jc/Editorial?node-id=1-731&t=C1IPAWHMabDo1equ-1)
 - [Mockup navigabile](https://www.figma.com/design/VVlOIfOH7KhUQbDykNnrL9/Editorial-public-mockup?node-id=73-21&t=YgjdDGSpUkIDXfkL-1)
 
